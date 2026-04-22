@@ -9,9 +9,7 @@ public class GameEngine
 
     public GameEngine()
     {
-        // Construct a path to the project's root directory
         var baseDirectory = AppContext.BaseDirectory;
-        // Go up from bin/Debug/net10.0 to the 'statle' directory
         var projectRoot = Path.GetFullPath(Path.Combine(baseDirectory, "..", "..", "..", ".."));
         var jsonFilePath = Path.Combine(projectRoot, "public", "pokemon-details.json");
 

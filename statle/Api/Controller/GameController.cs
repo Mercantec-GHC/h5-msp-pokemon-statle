@@ -28,7 +28,7 @@ public class GameController : ControllerBase
             return NotFound("Could not find a Pokémon to start the game.");
         }
 
-        // We don't return the pokemon details, just a confirmation.
+        
         return Ok(new { message = "New game started. A mystery Pokémon has been chosen.", gameId = _currentGame.GameId, pokemonName = _currentPokemon.Name });
     }
 
@@ -44,6 +44,31 @@ public class GameController : ControllerBase
 
         _currentGame = updatedGame;
 
-        return Ok(new { message, updatedGame.Score, pokemonName = _currentPokemon.Name, usedStats = _currentGame.UsedStats });
+        int gained = 0;
+        switch (stat.ToLower())
+        {
+            case "hp":
+                gained = _currentPokemon.Stats.Hp;
+                break;
+            case "attack":
+                gained = _currentPokemon.Stats.Attack;
+                break;
+            case "defense":
+                gained = _currentPokemon.Stats.Defense;
+                break;
+            case "sp_atk":
+                gained = _currentPokemon.Stats.special_attack;
+                break;
+            case "sp_def":
+                gained = _currentPokemon.Stats.special_defense;
+                break;
+            case "speed":
+                gained = _currentPokemon.Stats.Speed;
+                break;
+        }
+
+        _currentPokemon = _gameEngine.GetRandomPokemon();
+
+        return Ok(new { message, updatedGame.Score, pokemonName = _currentPokemon.Name, gained, usedStats = _currentGame.UsedStats });
     }
 }
