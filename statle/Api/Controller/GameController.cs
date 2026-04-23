@@ -1,6 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using statle.Api.Services;
+using statle.Api.Models;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+
 namespace statle.Api.Controller;
+
 
 [ApiController]
 [Route("api/[controller]")]
@@ -12,9 +17,13 @@ public class GameController : ControllerBase
     private static GameEngine.Game? _currentGame;
     private static PokemonDetails? _currentPokemon;
 
-    public GameController(GameEngine gameEngine)
+    private readonly AppDbContext _dbContext;
+   
+
+    public GameController(GameEngine gameEngine, AppDbContext dbContext)
     {
         _gameEngine = gameEngine;
+        _dbContext = dbContext;
     }
 
     [HttpPost("start")]
@@ -70,5 +79,37 @@ public class GameController : ControllerBase
         _currentPokemon = _gameEngine.GetRandomPokemon();
 
         return Ok(new { message, updatedGame.Score, pokemonName = _currentPokemon.Name, gained, usedStats = _currentGame.UsedStats });
+    }
+
+    [HttpPost("Save")]
+    [Authorize]
+    public async Task<IActionResult> SaveGame()
+    {
+        if (_currentGame == null)
+            return BadRequest();
+
+        // Debug: Print all claims
+        foreach (var claim in User.Claims)
+            Console.WriteLine($"CLAIM: {claim.Type} = {claim.Value}");
+
+        // Find the first nameidentifier claim that is a valid GUID
+        var userIdClaim = User.Claims.FirstOrDefault(c =>
+            c.Type == System.Security.Claims.ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _));
+        if (userIdClaim == null)
+            return Unauthorized("User ID not found in token.");
+        var userId = Guid.Parse(userIdClaim.Value);
+
+        var game = new Game
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Score = _currentGame.Score,
+            UsedStatsJson = System.Text.Json.JsonSerializer.Serialize(_currentGame.UsedStats)
+        };
+
+        _dbContext.Games.Add(game);
+        await _dbContext.SaveChangesAsync();
+
+        return Ok();
     }
 }
