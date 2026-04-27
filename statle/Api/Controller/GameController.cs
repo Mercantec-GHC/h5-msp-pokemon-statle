@@ -12,8 +12,7 @@ namespace statle.Api.Controller;
 public class GameController : ControllerBase
 {
     private readonly GameEngine _gameEngine;
-    // In a real application, you would use a database or a cache to store games.
-    // For this simple test, we'll just store one game in memory.
+  
     private static GameEngine.Game? _currentGame;
     private static PokemonDetails? _currentPokemon;
 
@@ -88,11 +87,9 @@ public class GameController : ControllerBase
         if (_currentGame == null)
             return BadRequest();
 
-        // Debug: Print all claims
         foreach (var claim in User.Claims)
             Console.WriteLine($"CLAIM: {claim.Type} = {claim.Value}");
 
-        // Find the first nameidentifier claim that is a valid GUID
         var userIdClaim = User.Claims.FirstOrDefault(c =>
             c.Type == System.Security.Claims.ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _));
         if (userIdClaim == null)

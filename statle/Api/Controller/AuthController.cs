@@ -43,7 +43,9 @@ namespace statle.Api.Controller
             _dbContext.Users.Add(user);
             await _dbContext.SaveChangesAsync();
 
-            return Ok(new { message = "User registered successfully" });
+            var token = GenerateJwtToken(user);
+            return Ok(new { token, username = user.Username });
+
         }
 
         [HttpPost("login")]
@@ -57,7 +59,11 @@ namespace statle.Api.Controller
             }
 
             var token = GenerateJwtToken(user);
-            return Ok(new { token });
+            return Ok(new 
+            { 
+                token,
+                username = user.Username
+            });
         }
 
         private string GenerateJwtToken(User user)
