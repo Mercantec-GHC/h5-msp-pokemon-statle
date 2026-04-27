@@ -1,0 +1,43 @@
+# ---------- Build backend ----------
+FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS backend-build
+WORKDIR /src/Api
+
+# copy csproj and restore
+COPY Api/*.csproj ./
+RUN dotnet restore
+
+# copy rest of backend
+COPY Api/. ./
+RUN dotnet publish -c Release -o /out
+
+# ---------- Build frontend ----------
+FROM node:20-alpine AS frontend-build
+WORKDIR /src/app
+
+# install deps
+COPY app/package*.json ./
+RUN npm install
+
+# copy rest of frontend
+COPY app/. ./
+RUN npm run build
+
+# ---------- Final image ----------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview
+WORKDIR /app
+
+# install node (needed to run Next.js)
+RUN apt-get update && apt-get install -y nodejs npm
+
+# copy backend
+COPY --from=backend-build /out ./backend
+
+# copy frontend
+COPY --from=frontend-build /src/app ./frontend
+
+# expose ports
+EXPOSE 5175
+EXPOSE 3000
+
+# run both apps
+CMD bash -c "dotnet ./backend/statle.Api.dll & cd frontend && npm start"
